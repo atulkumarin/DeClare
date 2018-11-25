@@ -1,0 +1,49 @@
+Snopes Dataset
+===================
+
+Snopes is a well-known fact checking website that validates Internet rumors, e-mail forwards, 
+hoaxes, urban legends, and other stories of unknown or questionable origin. They typically 
+collect these rumors and claims from social media, news websites, e-mails by users, etc. 
+Each website article verifies a single claim, e.g., “Clown masks have been banned
+in the United States, and wearing one can result in a $50,000 fine." 
+
+The Snopes editors assign a manual credibility verdict to each such claim: True or False. 
+Few of the claims have labels like Mostly True or Mostly False. We map Mostly True labels to True,
+and Mostly False labels to False — thereby considering only binary credibility labels for this work. 
+Claims having labels like Partially True or Partially False are ignored. 
+
+To retrieve the reporting articles for each claim, we issue each claim as a query 
+to a search engine and retrieve the top 30 search results with their respective web sources. 
+
+
+The statistics of the dataset is as following: 
+--------------------------------------------------
+#Claims				4341 
+	#True Claims	1164
+	#False Claims	3177
+#Claim Sources		-
+
+#Articles			29242
+#Article sources	336
+---------------------------------------------------
+
+The structure of the politifact.tsv file is following:
+<cred_label>\t<claim_id>\t<claim_text>\t<evidence>\t<evidence_source>
+
+<cred_label> -- credibility of the claim (True/False)
+<claim_id> -- uniq identifier of the claim
+<claim_text> -- text of the claim
+<evidence> -- relevant snippet from the evidence article
+<evidence_source> -- source of the evidence article
+
+
+
+If you use this data, please cite the following paper:
+
+Kashyap Popat, Subhabrata Mukherjee, Andrew Yates, and Gerhard Weikum.
+DeClarE: Debunking Fake News and False Claims using Evidence-Aware Deep Learning.
+In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing, EMNLP 2018.
+
+For further questions, please contact: kpopat@mpi-inf.mpg.de
+
+For more details: https://www.mpi-inf.mpg.de/dl-cred-analysis/

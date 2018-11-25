@@ -1,0 +1,49 @@
+PolitiFact Dataset
+===================
+
+PolitiFact is a political fact-checking website (www.politifact.com) in which editors 
+rate the credibility of claims made by various political figures in US politics. 
+We extract all articles from PolitiFact published before December 2017.
+Each article includes a claim, the speaker (political figure) who made the claim, 
+and the claim’s credibility rating provided by the editors.
+PolitiFact assigns each claim to one of six possible ratings:
+true, mostly true, half true, mostly false, false and pants-on-fire.
+
+We combine true, mostly true and half true ratings into the class label
+true and the rest as false – hence considering only binary credibility labels. 
+To retrieve the reporting articles for each claim, we issue each claim as a query 
+to a search engine and retrieve the top 30 search results with their respective web sources.
+
+
+The statistics of the dataset is as following: 
+--------------------------------------------------
+#Claims				3568 
+	#True Claims	1867
+	#False Claims	1701
+#Claim Sources		95
+
+#Articles			29556
+#Article sources	336
+---------------------------------------------------
+
+The structure of the politifact.tsv file is following:
+<cred_label>\t<claim_id>\t<claim_text>\t<claim_source>\t<evidence>\t<evidence_source>
+
+<cred_label> -- credibility of the claim (True/False)
+<claim_id> -- uniq identifier of the claim
+<claim_text> -- text of the claim
+<claim_source> -- speaker of the claim
+<evidence> -- relevant snippet from the evidence article
+<evidence_source> -- source of the evidence article
+
+
+
+If you use this data, please cite the following paper:
+
+Kashyap Popat, Subhabrata Mukherjee, Andrew Yates, and Gerhard Weikum.
+DeClarE: Debunking Fake News and False Claims using Evidence-Aware Deep Learning.
+In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing, EMNLP 2018.
+
+For further questions, please contact: kpopat@mpi-inf.mpg.de
+
+For more details: https://www.mpi-inf.mpg.de/dl-cred-analysis/
