@@ -243,3 +243,5 @@ TSWLatexianTemp*
 
 #zipped data
 *.zip
+
+*.ipynb_checkpoints
