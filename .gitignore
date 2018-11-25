@@ -242,4 +242,4 @@ TSWLatexianTemp*
 *.spl
 
 #zipped data
-#*.zip
+*.zip
