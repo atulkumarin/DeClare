@@ -241,7 +241,13 @@ TSWLatexianTemp*
 # generated if using elsarticle.cls
 *.spl
 
-#zipped data
+# zipped data
 *.zip
 
 *.ipynb_checkpoints
+
+# ignore Glove files
+Glove/*.txt
+
+# visual studio
+.vscode/
