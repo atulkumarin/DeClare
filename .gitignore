@@ -251,3 +251,10 @@ Glove/*.txt
 
 # visual studio
 .vscode/
+
+# vocabulary files
+Datasets/Snopes/*.npy
+Datasets/Politifact/*.npy
+
+# python 
+__pycache__/
