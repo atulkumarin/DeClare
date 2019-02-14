@@ -25,22 +25,23 @@ class DeClareDataset(Dataset):
         print("Number of claims = {}".format(self.news_df.Claim_Source.nunique()))
         
         self.glove_df = pd.read_csv(glove_path, sep=" ", index_col=0, header=None, quoting=csv.QUOTE_NONE)
+        self.glove_dim = self.glove_df.shape[1]
         
         self.vocab_path = os.path.join(os.path.dirname(news_dataset_path), 'vocab.npy')
         self.vocab_vectors_path = os.path.join(os.path.dirname(news_dataset_path), 'vocab_vectors.npy')
         
         self._build_vocabulary()
+        self._build_source_vocabularies()
     
     def _build_vocabulary(self):
         """
         Builds the vocabulary for the loaded news dataset (all tokens/words in every claim and every article) 
         as well as the initial glove embeddings for this vocabulary
         """
-
-        print("Building vocabulary for dataset")
+        
         # If vocabulary was previously built, load it
         if os.path.isfile(self.vocab_path) and os.path.isfile(self.vocab_vectors_path):
-            print("Found pre-built vocabulary.")
+            print("Using pre-built vocabulary")
             self.vocab = np.load(self.vocab_path).item()
             self.initial_embeddings = np.load(self.vocab_vectors_path)
         
@@ -51,7 +52,7 @@ class DeClareDataset(Dataset):
             token_count = 0
             unk_encountered = False
 
-            # Iterate over every token in the datasetsnopes = DeClareDataset(SNOPES_LOC, glove_data_file)
+            # Iterate over every token in the dataset
             for _, data_sample in self.news_df.iterrows():
                 words_in_sample = data_sample['Claim'].split() + data_sample['Article'].split()
                 for word in words_in_sample:
@@ -77,8 +78,25 @@ class DeClareDataset(Dataset):
             np.save(self.vocab_path, self.vocab)
             np.save(self.vocab_vectors_path, self.initial_embeddings)
         
-        print("Finished building vocabulary")
+            print("Finished building vocabulary")
     
+    def _build_source_vocabularies(self):
+        """
+        Builds the vocabulary for the claim sources and the article sources
+        """
+
+        self.claim_source_vocab = {}
+        self.article_source_vocab = {}
+
+        # Iterate over every news source in the dataset
+        for _, data_sample in self.news_df.iterrows():
+            claim_source = data_sample['Claim_Source']
+            article_source = data_sample['Article_Source']
+            if claim_source not in self.claim_source_vocab:
+                    self.claim_source_vocab[claim_source] = len(self.claim_source_vocab)
+            if article_source not in self.article_source_vocab:
+                    self.article_source_vocab[article_source] = len(self.article_source_vocab)
+
     def _vec(self, w):
         return self.glove_df.loc[w].as_matrix()
     
@@ -86,9 +104,17 @@ class DeClareDataset(Dataset):
         return len(self.news_df)
     
     def __getitem__(self, idx):
-        data_item = self.news_df.iloc[idx]
-        claim = data_item['Claim']
-        article = data_item['Article']
-        # TODO: convert claim and article to 1-hot vectors according to the vocabulary
-        # TODO: decide representation for claim source and article source
+        data_sample = self.news_df.iloc[idx]
+        claim = data_sample['Claim']
+        article = data_sample['Article']
+        claim_source = data_sample['Claim_Source']
+        article_source = data_sample['Article_Source']
+
+        claim_word_indices = [self.vocab[key] for key in claim.split()]
+        article_word_indices = [self.vocab[key] for key in article.split()]
+        claim_source_index = self.claim_source_vocab[claim_source]
+        article_source_index = self.article_source_vocab[article_source]
+
+        # TODO: convert these indices to torch tensors and figure out how to pass
+        #       them to embedding layer of network
         return
