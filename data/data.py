@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import csv
 
+import torch
 from torch.utils.data import Dataset
 
 class DeClareDataset(Dataset):
@@ -32,6 +33,10 @@ class DeClareDataset(Dataset):
         
         self._build_vocabulary()
         self._build_source_vocabularies()
+
+        self.vocabulary_size = len(self.initial_embeddings)
+        self.claim_source_vocab_size = len(self.claim_source_vocab)
+        self.article_source_vocab_size = len(self.article_source_vocab)
     
     def _build_vocabulary(self):
         """
@@ -93,9 +98,9 @@ class DeClareDataset(Dataset):
             claim_source = data_sample['Claim_Source']
             article_source = data_sample['Article_Source']
             if claim_source not in self.claim_source_vocab:
-                    self.claim_source_vocab[claim_source] = len(self.claim_source_vocab)
+                self.claim_source_vocab[claim_source] = len(self.claim_source_vocab)
             if article_source not in self.article_source_vocab:
-                    self.article_source_vocab[article_source] = len(self.article_source_vocab)
+                self.article_source_vocab[article_source] = len(self.article_source_vocab)
 
     def _vec(self, w):
         return self.glove_df.loc[w].as_matrix()
@@ -110,11 +115,9 @@ class DeClareDataset(Dataset):
         claim_source = data_sample['Claim_Source']
         article_source = data_sample['Article_Source']
 
-        claim_word_indices = [self.vocab[key] for key in claim.split()]
-        article_word_indices = [self.vocab[key] for key in article.split()]
-        claim_source_index = self.claim_source_vocab[claim_source]
-        article_source_index = self.article_source_vocab[article_source]
+        claim_word_indices = torch.tensor([self.vocab[key] for key in claim.split()], dtype=torch.long)
+        article_word_indices = torch.tensor([self.vocab[key] for key in article.split()], dtype=torch.long)
+        claim_source_index = torch.tensor(self.claim_source_vocab[claim_source], dtype=torch.long)
+        article_source_index = torch.tensor(self.article_source_vocab[article_source], dtype=torch.long)
 
-        # TODO: convert these indices to torch tensors and figure out how to pass
-        #       them to embedding layer of network
-        return
+        return claim_word_indices, article_word_indices, claim_source_index, article_source_index
