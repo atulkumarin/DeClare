@@ -5,6 +5,7 @@ import csv
 
 import torch
 from torch.utils.data import Dataset
+from torch.nn.utils.rnn import pad_sequence
 
 class DeClareDataset(Dataset):
     """
@@ -20,6 +21,8 @@ class DeClareDataset(Dataset):
         
         self.news_df = pd.read_csv(news_dataset_path, sep='\t', header=None)
         self.news_df.columns = ['Credibility', 'Claim_Source', 'Claim', 'Article', 'Article_Source']
+        self.max_len_claim = self.news_df['Claim'].str.split().str.len().max()
+        self.max_len_article = self.news_df['Article'].str.split().str.len().max()
         
         print("Successfully read news data from {}".format(news_dataset_path))
         print("Number of articles = {}".format(self.news_df.shape[0]))
@@ -56,6 +59,10 @@ class DeClareDataset(Dataset):
             embeddings = []
             token_count = 0
             unk_encountered = False
+            
+            # Insert all zero embedding for <PAD> at position 0
+            embeddings.append(np.zeros(self.glove_dim,))
+            token_count += 1
 
             # Iterate over every token in the dataset
             for _, data_sample in self.news_df.iterrows():
@@ -76,7 +83,8 @@ class DeClareDataset(Dataset):
                                 token_count += 1
                                 unk_encountered = True
                             self.vocab[word] = unk_index
-
+            
+            
             self.initial_embeddings = np.array(embeddings)
             
             # Save the vocabulary
@@ -114,10 +122,18 @@ class DeClareDataset(Dataset):
         article = data_sample['Article']
         claim_source = data_sample['Claim_Source']
         article_source = data_sample['Article_Source']
-
-        claim_word_indices = torch.tensor([self.vocab[key] for key in claim.split()], dtype=torch.long)
-        article_word_indices = torch.tensor([self.vocab[key] for key in article.split()], dtype=torch.long)
+        
+        claim_word_indices = torch.zeros(self.max_len_claim, dtype=torch.long)
+        temp_claim_word_indices = torch.tensor([self.vocab[key] for key in claim.split()], dtype=torch.long)
+        claim_word_indices[0:len(temp_claim_word_indices)] = temp_claim_word_indices
+        claim_length = len(temp_claim_word_indices)
+        
+        article_word_indices = torch.zeros(self.max_len_article, dtype=torch.long)
+        temp_article_word_indices = torch.tensor([self.vocab[key] for key in article.split()], dtype=torch.long)
+        article_word_indices[0:len(temp_article_word_indices)] = temp_article_word_indices
+        article_length = len(temp_article_word_indices)
+        
         claim_source_index = torch.tensor(self.claim_source_vocab[claim_source], dtype=torch.long)
         article_source_index = torch.tensor(self.article_source_vocab[article_source], dtype=torch.long)
 
-        return claim_word_indices, article_word_indices, claim_source_index, article_source_index
+        return claim_word_indices, claim_length, article_word_indices, article_length, claim_source_index, article_source_index
