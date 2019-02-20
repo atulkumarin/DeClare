@@ -258,3 +258,5 @@ Datasets/Politifact/*.npy
 
 # python 
 __pycache__/
+
+.DS_Store
