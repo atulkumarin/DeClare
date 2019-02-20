@@ -5,7 +5,7 @@ import csv
 
 import torch
 from torch.utils.data import Dataset
-from torch.nn.utils.rnn import pad_sequence
+import torch.nn.functional as F
 
 class DeClareDataset(Dataset):
     """
@@ -123,15 +123,13 @@ class DeClareDataset(Dataset):
         claim_source = data_sample['Claim_Source']
         article_source = data_sample['Article_Source']
         
-        claim_word_indices = torch.zeros(self.max_len_claim, dtype=torch.long)
-        temp_claim_word_indices = torch.tensor([self.vocab[key] for key in claim.split()], dtype=torch.long)
-        claim_word_indices[0:len(temp_claim_word_indices)] = temp_claim_word_indices
-        claim_length = len(temp_claim_word_indices)
+        claim_word_indices = torch.tensor([self.vocab[key] for key in claim.split()], dtype=torch.long)
+        claim_length = len(claim_word_indices)
+        claim_word_indices = F.pad(claim_word_indices, (0, self.max_len_claim - claim_length), mode='constant', value=0)
         
-        article_word_indices = torch.zeros(self.max_len_article, dtype=torch.long)
-        temp_article_word_indices = torch.tensor([self.vocab[key] for key in article.split()], dtype=torch.long)
-        article_word_indices[0:len(temp_article_word_indices)] = temp_article_word_indices
-        article_length = len(temp_article_word_indices)
+        article_word_indices = torch.tensor([self.vocab[key] for key in article.split()], dtype=torch.long)
+        article_length = len(article_word_indices)
+        article_word_indices = F.pad(article_word_indices, (0, self.max_len_article - article_length), mode='constant', value=0)
         
         claim_source_index = torch.tensor(self.claim_source_vocab[claim_source], dtype=torch.long)
         article_source_index = torch.tensor(self.article_source_vocab[article_source], dtype=torch.long)
