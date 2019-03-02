@@ -4,7 +4,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 class DeClareModel(nn.Module):
-    def __init__(self, glove_embeddings, claim_source_vocab_size, article_source_vocab_size, nb_lstm_units, batch_size, use_gpu=False):
+    def __init__(self, glove_embeddings, claim_source_vocab_size, article_source_vocab_size, nb_lstm_units, use_gpu=False):
         super(DeClareModel, self).__init__()
         
         self.use_gpu = use_gpu
@@ -13,13 +13,18 @@ class DeClareModel(nn.Module):
         self.claim_source_embeddings = nn.Embedding(claim_source_vocab_size, 4)
         self.article_source_embeddings = nn.Embedding(article_source_vocab_size, 8)
         
-        self.batch_size = batch_size
         self.embedding_dim = glove_embeddings.shape[1]
         self.nb_lstm_units = nb_lstm_units
         
         self.attention_dense = nn.Linear(2*self.embedding_dim, 1)
+        self.attention_dropout = nn.Dropout(0.5)
+
         self.dense_1 = nn.Linear(2*self.nb_lstm_units + 4 + 8, 64)
+        self.dense_1_dropout = nn.Dropout(0.5)
+
         self.dense_2 = nn.Linear(64, 64)
+        self.dense_2_dropout = nn.Dropout(0.5)
+
         self.output_layer = nn.Linear(64, 1)
         
         self.biLSTM = nn.LSTM(input_size=self.embedding_dim, hidden_size=self.nb_lstm_units,
@@ -27,9 +32,10 @@ class DeClareModel(nn.Module):
         
     def forward(self, claim, claim_len, article, article_len, claim_source, article_source):
         
-        self.hidden = self.init_hidden()
+        batch_size = claim.shape[0]
+        self.hidden = self.init_hidden(batch_size)
         
-        claim_mean_embedding = torch.mean(self.word_embeddings(claim).float(), 1)
+        claim_mean_embedding = torch.div(torch.sum(self.word_embeddings(claim).float(), 1), claim_len.float().unsqueeze(1))
         #shape : (batch, embedding_dim)
         
         article_embeddings = self.word_embeddings(article).float()
@@ -42,9 +48,10 @@ class DeClareModel(nn.Module):
         #shape : (batch, seq_len, 2*embedding_dim)
         
         claim_article_concat = torch.tanh(self.attention_dense(claim_article_concat)).squeeze()
+        claim_article_concat = self.attention_dropout(claim_article_concat)
         #shape : (batch, seq_len)
         
-        attentions = F.softmax(claim_article_concat)
+        attentions = F.softmax(claim_article_concat, dim=1)
         #shape : (batch, seq_len)
         
         # create masks based on sequence lengths
@@ -70,7 +77,7 @@ class DeClareModel(nn.Module):
         #shape : (batch_size, seq_len, num_dir*hidden_units)
         
         article_sequence_representation = article_sequence_representation*attentions.unsqueeze(-1).expand_as(article_sequence_representation)
-        attention_focused_article_rep = article_sequence_representation.mean(1)
+        attention_focused_article_rep = torch.div(article_sequence_representation.sum(1), article_len.float().unsqueeze(1))
         #shape : (batch_size, num_dir*hidden_units)
 
 
@@ -81,16 +88,16 @@ class DeClareModel(nn.Module):
         full_feature = torch.cat([claim_source_embedding, attention_focused_article_rep, article_source_embedding], 1)
         #shape : (batch_size, full_feature_dim)
 
-        out = F.relu(self.dense_1(full_feature))
-        out = F.relu(self.dense_2(out))
-        out = F.sigmoid(self.output_layer(out))
+        out = self.dense_1_dropout(F.relu(self.dense_1(full_feature)))
+        out = self.dense_2_dropout(F.relu(self.dense_2(out)))
+        out = torch.sigmoid(self.output_layer(out))
 
         return out
     
-    def init_hidden(self):
+    def init_hidden(self, batch_size):
         # the weights are of the form (num_layers*num_directions, batch, hidden_size)
-        hidden_a = torch.randn(1*2, self.batch_size, self.nb_lstm_units)
-        hidden_b = torch.randn(1*2, self.batch_size, self.nb_lstm_units)
+        hidden_a = torch.randn(1*2, batch_size, self.nb_lstm_units)
+        hidden_b = torch.randn(1*2, batch_size, self.nb_lstm_units)
 
         #hidden_a = Variable(hidden_a)
         #hidden_b = Variable(hidden_b)
