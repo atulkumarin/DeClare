@@ -9,7 +9,7 @@ class DeClareModel(nn.Module):
         
         self.use_gpu = use_gpu
         
-        self.word_embeddings = nn.Embedding.from_pretrained(torch.from_numpy(glove_embeddings), freeze=False)
+        self.word_embeddings = nn.Embedding.from_pretrained(torch.from_numpy(glove_embeddings), freeze=True)
         self.claim_source_embeddings = nn.Embedding(claim_source_vocab_size, 4)
         self.article_source_embeddings = nn.Embedding(article_source_vocab_size, 8)
         

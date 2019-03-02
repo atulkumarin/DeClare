@@ -122,6 +122,7 @@ class DeClareDataset(Dataset):
         article = data_sample['Article']
         claim_source = data_sample['Claim_Source']
         article_source = data_sample['Article_Source']
+        target = float(data_sample['Credibility'] == 'true')
         
         claim_word_indices = torch.tensor([self.vocab[key] for key in claim.split()], dtype=torch.long)
         claim_length = len(claim_word_indices)
@@ -134,4 +135,4 @@ class DeClareDataset(Dataset):
         claim_source_index = torch.tensor(self.claim_source_vocab[claim_source], dtype=torch.long)
         article_source_index = torch.tensor(self.article_source_vocab[article_source], dtype=torch.long)
 
-        return claim_word_indices, claim_length, article_word_indices, article_length, claim_source_index, article_source_index
+        return claim_word_indices, claim_length, article_word_indices, article_length, claim_source_index, article_source_index, target
