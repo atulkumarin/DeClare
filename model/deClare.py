@@ -4,10 +4,10 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 class DeClareModel(nn.Module):
-    def __init__(self, glove_embeddings, claim_source_vocab_size, article_source_vocab_size, nb_lstm_units, use_gpu=False):
+    def __init__(self, glove_embeddings, claim_source_vocab_size, article_source_vocab_size, nb_lstm_units, device='cpu'):
         super(DeClareModel, self).__init__()
         
-        self.use_gpu = use_gpu
+        self.device = device
         
         self.word_embeddings = nn.Embedding.from_pretrained(torch.from_numpy(glove_embeddings), freeze=True)
         self.claim_source_embeddings = nn.Embedding(claim_source_vocab_size, 4)
@@ -29,6 +29,8 @@ class DeClareModel(nn.Module):
         
         self.biLSTM = nn.LSTM(input_size=self.embedding_dim, hidden_size=self.nb_lstm_units,
                               batch_first=True, bidirectional=True)
+
+        self.to(device)
         
     def forward(self, claim, claim_len, article, article_len, claim_source, article_source):
         
@@ -56,10 +58,8 @@ class DeClareModel(nn.Module):
         
         # create masks based on sequence lengths
         max_len = article.shape[1]
-        idxes = torch.arange(0,max_len,out=torch.LongTensor(max_len)).unsqueeze(0) # some day, you'll be able to directly do this on cuda
-        if self.use_gpu:
-            idxes = idxes.cuda()
-        mask = Variable((idxes<article_len.unsqueeze(1)).float())
+        idxes = torch.arange(0,max_len,out=torch.LongTensor(max_len)).unsqueeze(0).to(self.device) # some day, you'll be able to directly do this on cuda
+        mask = Variable((idxes<article_len.unsqueeze(1)).float()).to(self.device)
         
         # apply mask and renormalize attention scores (weights)
         masked = attentions * mask
@@ -96,8 +96,8 @@ class DeClareModel(nn.Module):
     
     def init_hidden(self, batch_size):
         # the weights are of the form (num_layers*num_directions, batch, hidden_size)
-        hidden_a = torch.randn(1*2, batch_size, self.nb_lstm_units)
-        hidden_b = torch.randn(1*2, batch_size, self.nb_lstm_units)
+        hidden_a = torch.randn(1*2, batch_size, self.nb_lstm_units).to(self.device)
+        hidden_b = torch.randn(1*2, batch_size, self.nb_lstm_units).to(self.device)
 
         #hidden_a = Variable(hidden_a)
         #hidden_b = Variable(hidden_b)

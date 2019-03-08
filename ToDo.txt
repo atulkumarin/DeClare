@@ -1,5 +1,5 @@
-- correct mean calculation for both averaging steps in forward prop.
-- dataset and dataloader for inference where target is not available
+- correct mean calculation for both averaging steps in forward prop  DONE
+- dataset and dataloader for inference where target is not available DONE
 - test/train/cross-validation split best practices
 - L2 regularization and dropout for MLPs
 - embedding for padding in case of pre-trained
