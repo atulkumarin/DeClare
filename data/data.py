@@ -82,8 +82,16 @@ class DeClareDataset(Dataset):
                                 unk_index = token_count
                                 token_count += 1
                                 unk_encountered = True
-                            self.vocab[word] = unk_index
+                                self.vocab['unk'] = unk_index
+                            #if embeddings are frozen, there is no point in storing this OoV word
+                            #self.vocab[word] = unk_index
             
+            if not unk_encountered:
+                embeddings.append(self._vec('unk'))
+                unk_index = token_count
+                token_count += 1
+                unk_encountered = True
+                self.vocab['unk'] = unk_index
             
             self.initial_embeddings = np.array(embeddings)
             
