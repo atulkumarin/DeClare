@@ -52,6 +52,7 @@ class DeClareDataset(Dataset):
             print("Using pre-built vocabulary")
             self.vocab = np.load(self.vocab_path).item()
             self.initial_embeddings = np.load(self.vocab_vectors_path)
+            self.unk_index = self.vocab['unk']
 
         else:
             print("Building vocabulary. This could take a while..")
