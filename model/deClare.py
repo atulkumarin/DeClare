@@ -9,7 +9,7 @@ class DeClareModel(nn.Module):
 
         self.device = device
 
-        self.word_embeddings = nn.Embedding.from_pretrained(torch.from_numpy(glove_embeddings), freeze=False)
+        self.word_embeddings = nn.Embedding.from_pretrained(torch.from_numpy(glove_embeddings), freeze=True)
         self.claim_source_embeddings = nn.Embedding(claim_source_vocab_size, 4)
         self.article_source_embeddings = nn.Embedding(article_source_vocab_size, 8)
 
@@ -74,7 +74,6 @@ class DeClareModel(nn.Module):
 
 
         # LSTM BRANCH
-
         article_embeddings = article_embeddings*mask.unsqueeze(-1)
         article_sequence = nn.utils.rnn.pack_padded_sequence(article_embeddings, article_len, batch_first=True)
         article_sequence_representation, self.hidden = self.biLSTM(article_sequence, self.hidden)
