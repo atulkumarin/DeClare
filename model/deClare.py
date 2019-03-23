@@ -9,7 +9,7 @@ class DeClareModel(nn.Module):
 
         self.device = device
 
-        self.word_embeddings = nn.Embedding.from_pretrained(torch.from_numpy(glove_embeddings), freeze=True)
+        self.word_embeddings = nn.Embedding.from_pretrained(torch.from_numpy(glove_embeddings), freeze=False)
         self.claim_source_embeddings = nn.Embedding(claim_source_vocab_size, 4)
         self.article_source_embeddings = nn.Embedding(article_source_vocab_size, 8)
 
@@ -37,7 +37,12 @@ class DeClareModel(nn.Module):
         batch_size = claim.shape[0]
         self.hidden = self.init_hidden(batch_size)
 
-        claim_mean_embedding = torch.div(torch.sum(self.word_embeddings(claim).float(), 1), claim_len.float().unsqueeze(1))
+        # create masks based on sequence lengths
+        claim_max_len = claim.shape[1]
+        idxes = torch.arange(0,claim_max_len,out=torch.LongTensor(claim_max_len)).unsqueeze(0).to(self.device) # some day, you'll be able to directly do this on cuda
+        claim_input_mask = Variable((idxes<claim_len.unsqueeze(1)).float()).to(self.device).unsqueeze(-1)
+
+        claim_mean_embedding = torch.div(torch.sum(self.word_embeddings(claim).float()*claim_input_mask, 1), claim_len.float().unsqueeze(1))
         #shape : (batch, embedding_dim)
 
         article_embeddings = self.word_embeddings(article).float()
@@ -69,8 +74,9 @@ class DeClareModel(nn.Module):
 
 
         # LSTM BRANCH
-        article_sequence = nn.utils.rnn.pack_padded_sequence(article_embeddings, article_len, batch_first=True)
 
+        article_embeddings = article_embeddings*mask.unsqueeze(-1)
+        article_sequence = nn.utils.rnn.pack_padded_sequence(article_embeddings, article_len, batch_first=True)
         article_sequence_representation, self.hidden = self.biLSTM(article_sequence, self.hidden)
 
         article_sequence_representation, _ = torch.nn.utils.rnn.pad_packed_sequence(article_sequence_representation, batch_first=True, padding_value=0)
