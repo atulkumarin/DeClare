@@ -27,12 +27,14 @@ class DeClareEvaluation(object):
     def claim_wise_accuracies(self):
         claims = self.test_data[0]
         unique_claims = torch.unique(claims, dim=0)
-        per_claim_score = torch.zeros_like(unique_claims).float()
+        per_claim_score = torch.zeros(len(unique_claims))
+        per_claim_label = torch.zeros(len(unique_claims))
 
         for i, claim in enumerate(unique_claims):
             indices = (claims == claim).all(dim=1).nonzero().squeeze(-1)
             claim_scores = self.predictions[indices]
             per_claim_score[i] = claim_scores.mean()
+            per_claim_label[i] = self.test_data[-1][indices[0]]
         
-        return per_claim_score
+        return per_claim_label, per_claim_score
     
