@@ -52,6 +52,7 @@ class DeClareDataset(Dataset):
             print("Using pre-built vocabulary")
             self.vocab = np.load(self.vocab_path).item()
             self.initial_embeddings = np.load(self.vocab_vectors_path)
+            self.unk_index = self.vocab['unk']
 
         else:
             print("Building vocabulary. This could take a while..")
@@ -80,6 +81,7 @@ class DeClareDataset(Dataset):
                             if not unk_encountered:
                                 embeddings.append(self._vec('unk'))
                                 self.unk_index = token_count
+                                self.vocab['unk'] = self.unk_index
                                 token_count += 1
                                 unk_encountered = True
                             self.vocab[word] = self.unk_index
@@ -136,15 +138,15 @@ class DeClareDataset(Dataset):
         article_source = data_sample['Article_Source']
         target = float(data_sample['Credibility'] == 'true')
 
-        claim_word_indices = torch.tensor([self.vocab[key] for key in claim.split()], dtype=torch.long)
+        claim_word_indices = torch.tensor([self.vocab.get(key, self.unk_index) for key in claim.split()], dtype=torch.long)
         claim_length = len(claim_word_indices)
         claim_word_indices = F.pad(claim_word_indices, (0, self.max_len_claim - claim_length), mode='constant', value=0)
 
-        article_word_indices = torch.tensor([self.vocab[key] for key in article.split()], dtype=torch.long)
+        article_word_indices = torch.tensor([self.vocab.get(key, self.unk_index) for key in article.split()], dtype=torch.long)
         article_length = len(article_word_indices)
         article_word_indices = F.pad(article_word_indices, (0, self.max_len_article - article_length), mode='constant', value=0)
 
-        claim_source_index = torch.tensor(self.claim_source_vocab[claim_source], dtype=torch.long)
-        article_source_index = torch.tensor(self.article_source_vocab[article_source], dtype=torch.long)
+        claim_source_index = torch.tensor(self.claim_source_vocab.get(claim_source, self.claim_unk_index), dtype=torch.long)
+        article_source_index = torch.tensor(self.article_source_vocab.get(article_source, self.article_unk_index), dtype=torch.long)
 
         return claim_word_indices, claim_length, article_word_indices, article_length, claim_source_index, article_source_index, target
